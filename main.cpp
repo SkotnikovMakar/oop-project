@@ -1,216 +1,173 @@
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <vector>
-#include <string>
-#include "Warehouse.h"
+#include "OrderManager.h"
+#include "DeliveryImpl.h"
+#include "DiscountImpl.h"
 #include "Factories.h"
 
 void printMenu() {
-    std::cout << "\n=== Warehouse Manager ===\n";
-    std::cout << "1.  Create warehouse\n";
-    std::cout << "2.  Add Smartphone\n";
-    std::cout << "3.  Add Laptop\n";
-    std::cout << "4.  Add TShirt\n";
-    std::cout << "5.  Add Jacket\n";
-    std::cout << "6.  Add Milk\n";
-    std::cout << "7.  Add Bread\n";
-    std::cout << "8.  Remove by ID\n";
-    std::cout << "9.  Remove by index\n";
-    std::cout << "10. Find by ID\n";
-    std::cout << "11. Find by category\n";
-    std::cout << "12. Find by price\n";
-    std::cout << "13. Copy warehouse\n";
-    std::cout << "14. Move warehouse\n";
-    std::cout << "15. Transfer product to another warehouse\n";
-    std::cout << "16. Print all products\n";
-    std::cout << "17. Exit\n";
+    std::cout << "\n=== Order Management System ===\n";
+    std::cout << "1.  Create Order\n";
+    std::cout << "2.  Add Item to Order\n";
+    std::cout << "3.  Set Delivery\n";
+    std::cout << "4.  Apply Percent Discount\n";
+    std::cout << "5.  Change Order Status\n";
+    std::cout << "6.  Print Order Info\n";
+    std::cout << "7.  Print Manager Turnover\n";
+    std::cout << "8.  Exit\n";
     std::cout << "Choose: ";
 }
 
-std::unique_ptr<Product> createFromFactory(ProductFactory& factory) {
-    std::string name;
-    int price, qty;
-    double weight;
-    std::cout << "Name: "; std::cin >> name;
-    std::cout << "Price: "; std::cin >> price;
-    std::cout << "Quantity: "; std::cin >> qty;
-    std::cout << "Weight: "; std::cin >> weight;
-    return factory.createProduct(name, price, qty, weight);
-}
-
 int main() {
-    std::vector<std::unique_ptr<Warehouse>> warehouses;
-    SmartphoneFactory phoneF;
-    LaptopFactory laptopF;
-    TShirtFactory tshirtF;
-    JacketFactory jacketF;
-    MilkFactory milkF;
-    BreadFactory breadF;
+    try {
+        OrderManager manager(5);
+        std::vector<Order*> orders;
+        int choice = 0;
 
-    int choice = 0;
-    while (choice != 17) {
-        printMenu();
-        std::cin >> choice;
-        try {
-            switch (choice) {
-            case 1: {
-                size_t size;
-                std::cout << "Max size: "; std::cin >> size;
-                warehouses.push_back(std::make_unique<Warehouse>(size));
-                std::cout << "Warehouse #" << warehouses.size() - 1 << " created.\n";
-                break;
+        while (choice != 8) {
+            printMenu();
+            if (!(std::cin >> choice)) {
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                std::cout << "Invalid input.\n";
+                continue;
             }
-            case 2: case 3: case 4: case 5: case 6: case 7: {
-                if (warehouses.empty()) { std::cout << "No warehouse. Create first.\n"; break; }
-                int widx;
-                std::cout << "Warehouse index (0.." << warehouses.size() - 1 << "): "; std::cin >> widx;
-                if (widx < 0 || widx >= (int)warehouses.size()) { std::cout << "Invalid index.\n"; break; }
-                ProductFactory* f = nullptr;
-                if (choice == 2) f = &phoneF;
-                else if (choice == 3) f = &laptopF;
-                else if (choice == 4) f = &tshirtF;
-                else if (choice == 5) f = &jacketF;
-                else if (choice == 6) f = &milkF;
-                else f = &breadF;
-                auto p = createFromFactory(*f);
-                if (warehouses[widx]->addProduct(std::move(p)))
-                    std::cout << "Added.\n";
-                else
-                    std::cout << "Warehouse is full.\n";
-                break;
-            }
-            case 8: {
-                if (warehouses.empty()) break;
-                int widx, id;
-                std::cout << "Warehouse index: "; std::cin >> widx;
-                std::cout << "ID: "; std::cin >> id;
-                if (widx >= 0 && widx < (int)warehouses.size()) {
-                    warehouses[widx]->removeById(id);
-                    std::cout << "Removed.\n";
+
+            try {
+                switch (choice) {
+                case 1: {
+                    std::string customer;
+                    std::cout << "Customer name: ";
+                    std::cin >> customer;
+                    Order* order = manager.createOrder(customer);
+                    orders.push_back(order);
+                    std::cout << "Order created. Index: " << orders.size() - 1 << "\n";
+                    break;
                 }
-                else std::cout << "Invalid index.\n";
-                break;
-            }
-            case 9: {
-                if (warehouses.empty()) break;
-                int widx; size_t idx;
-                std::cout << "Warehouse index: "; std::cin >> widx;
-                std::cout << "Index: "; std::cin >> idx;
-                if (widx >= 0 && widx < (int)warehouses.size()) {
-                    warehouses[widx]->removeByIndex(idx);
-                    std::cout << "Removed.\n";
+                case 2: {
+                    if (orders.empty()) { std::cout << "No orders.\n"; break; }
+                    int idx;
+                    std::cout << "Order index: ";
+                    std::cin >> idx;
+                    if (idx < 0 || idx >= (int)orders.size()) { std::cout << "Invalid index.\n"; break; }
+
+                    int itemChoice;
+                    std::cout << "1. Smartphone\n2. Laptop\n3. TShirt\n4. Jacket\n5. Milk\n6. Bread\nChoose: ";
+                    std::cin >> itemChoice;
+
+                    std::string name;
+                    int price, qty;
+                    double weight;
+                    std::cout << "Name: "; std::cin >> name;
+                    std::cout << "Price: "; std::cin >> price;
+                    std::cout << "Quantity: "; std::cin >> qty;
+                    std::cout << "Weight: "; std::cin >> weight;
+
+                    ProductFactory* f = nullptr;
+                    SmartphoneFactory sf; LaptopFactory lf; TShirtFactory tf;
+                    JacketFactory jf; MilkFactory mf; BreadFactory bf;
+
+                    if (itemChoice == 1) f = &sf;
+                    else if (itemChoice == 2) f = &lf;
+                    else if (itemChoice == 3) f = &tf;
+                    else if (itemChoice == 4) f = &jf;
+                    else if (itemChoice == 5) f = &mf;
+                    else if (itemChoice == 6) f = &bf;
+                    else { std::cout << "Invalid item.\n"; break; }
+
+                    orders[idx]->addItem(std::shared_ptr<Product>(f->createProduct(name, price, qty, weight)));
+                    std::cout << "Item added.\n";
+                    break;
                 }
-                else std::cout << "Invalid index.\n";
-                break;
-            }
-            case 10: {
-                if (warehouses.empty()) break;
-                int widx, id;
-                std::cout << "Warehouse index: "; std::cin >> widx;
-                std::cout << "ID: "; std::cin >> id;
-                if (widx >= 0 && widx < (int)warehouses.size()) {
-                    auto p = warehouses[widx]->findById(id);
-                    if (p) std::cout << "Found: ID=" << p->getId()
-                        << ", category=" << p->getCategory()
-                        << ", price=" << p->getPrice().getValue()
-                        << ", qty=" << p->getQuantity().getValue() << "\n";
-                    else std::cout << "Not found.\n";
-                }
-                else std::cout << "Invalid index.\n";
-                break;
-            }
-            case 11: {
-                if (warehouses.empty()) break;
-                int widx; std::string cat;
-                std::cout << "Warehouse index: "; std::cin >> widx;
-                std::cout << "Category (electronics/clothing/food): "; std::cin >> cat;
-                if (widx >= 0 && widx < (int)warehouses.size()) {
-                    auto list = warehouses[widx]->findByCategory(cat);
-                    std::cout << "Found " << list.size() << " items.\n";
-                    for (auto* p : list)
-                        std::cout << "  ID=" << p->getId()
-                        << ", price=" << p->getPrice().getValue() << "\n";
-                }
-                else std::cout << "Invalid index.\n";
-                break;
-            }
-            case 12: {
-                if (warehouses.empty()) break;
-                int widx, price;
-                std::cout << "Warehouse index: "; std::cin >> widx;
-                std::cout << "Price: "; std::cin >> price;
-                if (widx >= 0 && widx < (int)warehouses.size()) {
-                    auto list = warehouses[widx]->findByPrice(Price(price));
-                    std::cout << "Found " << list.size() << " items.\n";
-                    for (auto* p : list)
-                        std::cout << "  ID=" << p->getId()
-                        << ", category=" << p->getCategory() << "\n";
-                }
-                else std::cout << "Invalid index.\n";
-                break;
-            }
-            case 13: {
-                if (warehouses.empty()) break;
-                int widx;
-                std::cout << "Warehouse index to copy: "; std::cin >> widx;
-                if (widx >= 0 && widx < (int)warehouses.size()) {
-                    warehouses.push_back(std::make_unique<Warehouse>(*warehouses[widx]));
-                    std::cout << "Copied to warehouse #" << warehouses.size() - 1 << "\n";
-                }
-                else std::cout << "Invalid index.\n";
-                break;
-            }
-            case 14: {
-                if (warehouses.empty()) break;
-                int widx;
-                std::cout << "Warehouse index to move: "; std::cin >> widx;
-                if (widx >= 0 && widx < (int)warehouses.size()) {
-                    warehouses.push_back(std::make_unique<Warehouse>(std::move(*warehouses[widx])));
-                    std::cout << "Moved to warehouse #" << warehouses.size() - 1
-                        << ", original size: " << warehouses[widx]->size() << "\n";
-                }
-                else std::cout << "Invalid index.\n";
-                break;
-            }
-            case 15: {
-                int from, to, id;
-                std::cout << "From warehouse index: "; std::cin >> from;
-                std::cout << "To warehouse index: "; std::cin >> to;
-                std::cout << "Product ID: "; std::cin >> id;
-                if (from >= 0 && from < (int)warehouses.size() &&
-                    to >= 0 && to < (int)warehouses.size()) {
-                    bool ok = warehouses[from]->moveProductTo(id, *warehouses[to]);
-                    std::cout << (ok ? "Transferred.\n" : "Failed.\n");
-                }
-                else std::cout << "Invalid index.\n";
-                break;
-            }
-            case 16: {
-                if (warehouses.empty()) break;
-                int widx;
-                std::cout << "Warehouse index: "; std::cin >> widx;
-                if (widx >= 0 && widx < (int)warehouses.size()) {
-                    std::cout << "Products in warehouse #" << widx << ":\n";
-                    for (auto it = warehouses[widx]->begin(); it != warehouses[widx]->end(); ++it) {
-                        std::cout << "  ID=" << it->getId()
-                            << ", category=" << it->getCategory()
-                            << ", price=" << it->getPrice().getValue()
-                            << ", qty=" << it->getQuantity().getValue() << "\n";
+                case 3: {
+                    if (orders.empty()) { std::cout << "No orders.\n"; break; }
+                    int idx;
+                    std::cout << "Order index: ";
+                    std::cin >> idx;
+                    if (idx < 0 || idx >= (int)orders.size()) { std::cout << "Invalid index.\n"; break; }
+
+                    int delChoice;
+                    std::cout << "1. Courier (500), 2. Pickup (0), 3. Post (200): ";
+                    std::cin >> delChoice;
+
+                    std::shared_ptr<Delivery> real;
+                    if (delChoice == 1) real = std::make_shared<CourierDelivery>();
+                    else if (delChoice == 2) real = std::make_shared<PickupDelivery>();
+                    else if (delChoice == 3) real = std::make_shared<PostDelivery>();
+                    else { std::cout << "Invalid delivery.\n"; break; }
+
+                    auto proxy = std::make_shared<DeliveryProxy>(real);
+
+                    if (proxy->isAvailable(*orders[idx])) {
+                        *orders[idx] << proxy;
+                        std::cout << "Delivery assigned. Cost: " << proxy->getCost(*orders[idx]) << " rub.\n";
                     }
+                    else {
+                        std::cout << "Delivery not available for this weight.\n";
+                    }
+                    break;
                 }
-                else std::cout << "Invalid index.\n";
-                break;
+                case 4: {
+                    if (orders.empty()) { std::cout << "No orders.\n"; break; }
+                    int idx;
+                    std::cout << "Order index: ";
+                    std::cin >> idx;
+                    if (idx < 0 || idx >= (int)orders.size()) { std::cout << "Invalid index.\n"; break; }
+
+                    PercentDiscount promo(10);
+                    *orders[idx] + promo;
+                    std::cout << "10% discount applied.\n";
+                    break;
+                }
+                case 5: {
+                    if (orders.empty()) { std::cout << "No orders.\n"; break; }
+                    int idx, statusChoice;
+                    std::cout << "Order index: ";
+                    std::cin >> idx;
+                    if (idx < 0 || idx >= (int)orders.size()) { std::cout << "Invalid index.\n"; break; }
+
+                    std::cout << "Status (0-Pending, 1-Paid, 2-Shipped, 3-Delivered, 4-Cancelled): ";
+                    std::cin >> statusChoice;
+
+                    if (statusChoice < 0 || statusChoice > 4) {
+                        std::cout << "Invalid status code.\n";
+                        break;
+                    }
+
+                    orders[idx]->setStatus(static_cast<OrderStatus>(statusChoice));
+                    std::cout << "Status changed.\n";
+                    break;
+                }
+                case 6: {
+                    if (orders.empty()) { std::cout << "No orders.\n"; break; }
+                    int idx;
+                    std::cout << "Order index: ";
+                    std::cin >> idx;
+                    if (idx < 0 || idx >= (int)orders.size()) { std::cout << "Invalid index.\n"; break; }
+                    std::cout << *orders[idx] << "\n";
+                    break;
+                }
+                case 7: {
+                    std::cout << "Manager turnover: " << manager.getTurnover() << " rub.\n";
+                    std::cout << "Total customers: " << manager.getCustomerCount() << "\n";
+                    break;
+                }
+                case 8:
+                    std::cout << "Bye.\n";
+                    break;
+                default:
+                    std::cout << "Unknown option.\n";
+                }
             }
-            case 17:
-                std::cout << "Bye.\n";
-                break;
-            default:
-                std::cout << "Unknown option.\n";
+            catch (const std::exception& e) {
+                std::cout << "Error: " << e.what() << "\n";
             }
         }
-        catch (const std::exception& e) {
-            std::cout << "Error: " << e.what() << "\n";
-        }
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Fatal error: " << e.what() << "\n";
     }
     return 0;
 }

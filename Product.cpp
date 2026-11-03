@@ -1,10 +1,10 @@
 #include "Product.h"
-#include "Warehouse.h"
 
 int Product::nextId = 1;
 
 Product::Product(const std::string& n, const Price& p, const Quantity& q, const Weight& w, const std::string& c)
     : id(nextId++), name(n), price(p), quantity(q), weight(w), category(c) {
+    type = ProductType::getType(category);
 }
 
 Electronics::Electronics(const std::string& n, const Price& p, const Quantity& q, const Weight& w)
@@ -23,8 +23,3 @@ TShirt::TShirt(const std::string& n, const Price& p, const Quantity& q, const We
 Jacket::Jacket(const std::string& n, const Price& p, const Quantity& q, const Weight& w) : Clothing(n, p, q, w) {}
 Milk::Milk(const std::string& n, const Price& p, const Quantity& q, const Weight& w) : Food(n, p, q, w) {}
 Bread::Bread(const std::string& n, const Price& p, const Quantity& q, const Weight& w) : Food(n, p, q, w) {}
-
-bool Product::transferTo(Warehouse& other) {
-    auto copy = clone();
-    return other.addProduct(std::move(copy));
-}

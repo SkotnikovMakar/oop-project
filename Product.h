@@ -2,6 +2,7 @@
 #include <string>
 #include <memory>
 #include "Attributes.h"
+#include "ProductType.h"
 
 class Warehouse;
 
@@ -13,6 +14,7 @@ protected:
     Quantity quantity;
     Weight weight;
     std::string category;
+    std::shared_ptr<ProductType> type;
     static int nextId;
 
 public:
@@ -24,12 +26,15 @@ public:
     Price getPrice() const { return price; }
     Quantity getQuantity() const { return quantity; }
     Weight getWeight() const { return weight; }
+    std::shared_ptr<ProductType> getType() const { return type; }
+
+    double getTotalPrice() const { return price.getValue() * quantity.getValue(); }
+    double getTotalWeight() const { return weight.getValue() * quantity.getValue(); }
 
     void changeQuantity(int delta) { quantity.change(delta); }
     void setPrice(const Price& newPrice) { price = newPrice; }
 
     bool transferTo(Warehouse& other);
-
     virtual std::unique_ptr<Product> clone() const = 0;
 };
 
